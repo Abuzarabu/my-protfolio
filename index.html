@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ember & Oak — Premium Dining</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 :root{
   --bg:#12100e; --bg-alt:#1c1815; --gold:#c9a227; --gold-soft:#e8c765;
@@ -21,11 +22,14 @@ nav a{color:var(--cream);text-decoration:none;font-size:13px;letter-spacing:2px;
 nav a:hover{opacity:1;color:var(--gold-soft);}
 .cart-btn{position:relative;background:none;border:1px solid var(--gold);color:var(--gold-soft);padding:10px 18px;font-size:13px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;}
 .cart-count{position:absolute;top:-8px;right:-8px;background:var(--rust);color:#fff;font-size:11px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 20px;background:radial-gradient(circle at 30% 20%,rgba(201,162,39,0.08),transparent 40%),var(--bg);}
-.hero .eyebrow{letter-spacing:5px;text-transform:uppercase;font-size:12px;color:var(--gold);margin-bottom:16px;}
-.hero h1{font-size:clamp(42px,8vw,96px);font-style:italic;color:var(--cream);}
-.hero h1 span{color:var(--gold-soft);font-style:normal;}
-.hero p{max-width:500px;margin:20px auto 0;opacity:0.7;font-size:16px;line-height:1.7;}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 20px;position:relative;overflow:hidden;perspective:1000px;}
+.hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=90&w=2400') center/cover;transform:scale(1.15);will-change:transform;}
+.hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,16,14,0.55) 0%,rgba(18,16,14,0.75) 55%,rgba(18,16,14,0.98) 100%);}
+.hero-content{position:relative;z-index:2;transform-style:preserve-3d;}
+.hero .eyebrow{letter-spacing:6px;text-transform:uppercase;font-size:12px;color:var(--gold);margin-bottom:18px;text-shadow:0 2px 12px rgba(0,0,0,0.5);}
+.hero h1{font-size:clamp(46px,9vw,110px);font-style:italic;color:var(--cream);text-shadow:0 8px 40px rgba(0,0,0,0.6);letter-spacing:-1px;}
+.hero h1 span{color:var(--gold-soft);font-style:normal;text-shadow:0 0 30px rgba(232,199,101,0.4);}
+.hero p{max-width:520px;margin:22px auto 0;opacity:0.85;font-size:17px;line-height:1.8;text-shadow:0 2px 10px rgba(0,0,0,0.5);}
 section{padding:100px 5%;}
 .section-head{text-align:center;max-width:600px;margin:0 auto 50px;}
 .section-head .tag{color:var(--gold);letter-spacing:4px;text-transform:uppercase;font-size:12px;}
@@ -35,8 +39,18 @@ section{padding:100px 5%;}
 .tab-btn.active,.tab-btn:hover{opacity:1;border-color:var(--gold);color:var(--gold-soft);background:rgba(201,162,39,0.08);}
 .menu-panel{display:none;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px;max-width:1100px;margin:0 auto;}
 .menu-panel.active{display:grid;}
-.item-card{background:var(--bg-alt);border:1px solid var(--line);display:flex;flex-direction:column;}
-.item-card img{width:100%;height:180px;object-fit:cover;}
+.item-card{background:var(--bg-alt);border:1px solid var(--line);display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,0.35);transition:box-shadow 0.25s ease;}
+.item-card:hover{box-shadow:0 30px 60px rgba(0,0,0,0.55),0 0 0 1px var(--gold);}
+.img-frame{width:100%;height:190px;perspective:900px;overflow:hidden;position:relative;}
+.img-frame img{width:100%;height:100%;object-fit:cover;transform-style:preserve-3d;animation:spinFrame 9s ease-in-out infinite;}
+.item-card:hover .img-frame img{animation-play-state:paused;transform:rotateY(0deg) scale(1.06);transition:transform 0.4s ease;}
+@keyframes spinFrame{
+  0%{transform:rotateY(0deg);}
+  25%{transform:rotateY(8deg) scale(1.03);}
+  50%{transform:rotateY(0deg);}
+  75%{transform:rotateY(-8deg) scale(1.03);}
+  100%{transform:rotateY(0deg);}
+}
 .item-body{padding:18px;flex:1;display:flex;flex-direction:column;}
 .item-body h4{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:6px;}
 .item-body p{font-size:13px;opacity:0.65;flex:1;margin-bottom:14px;line-height:1.5;}
@@ -88,10 +102,14 @@ footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-s
   </nav>
 </header>
 
-<section class="hero">
-  <div class="eyebrow">Fine Dining &amp; Craft Bars</div>
-  <h1>Ember <span>&amp;</span> Oak</h1>
-  <p>Wood-fired plates, three curated bars, and a menu built for lingering evenings.</p>
+<section class="hero" id="heroSection">
+  <div class="hero-bg" id="heroBg"></div>
+  <div id="scene3d" style="position:absolute;inset:0;z-index:1;"></div>
+  <div class="hero-content">
+    <div class="eyebrow">Fine Dining &amp; Craft Bars</div>
+    <h1>Ember <span>&amp;</span> Oak</h1>
+    <p>Wood-fired plates, three curated bars, and a menu built for lingering evenings.</p>
+  </div>
 </section>
 
 <section id="menu">
@@ -107,17 +125,17 @@ footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-s
 
   <div class="menu-panel active" id="starters">
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1541529086526-db283c563270?q=80&w=600" alt="Burrata">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1541529086526-db283c563270?q=80&w=600" alt="Burrata"></div>
       <div class="item-body"><h4>Burrata &amp; Charred Fig</h4><p>Creamy burrata, roasted figs, basil oil.</p>
       <div class="item-footer"><span class="price">₹380</span><button class="add-btn" onclick="addToCart('Burrata & Charred Fig',380)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1476124369491-e7addf5db371?q=80&w=600" alt="Soup">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1476124369491-e7addf5db371?q=80&w=600" alt="Soup"></div>
       <div class="item-body"><h4>Smoked Tomato Soup</h4><p>Smoked tomatoes, cream swirl, garlic bread.</p>
       <div class="item-footer"><span class="price">₹250</span><button class="add-btn" onclick="addToCart('Smoked Tomato Soup',250)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1541014741259-de529411b96a?q=80&w=600" alt="Calamari">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1541014741259-de529411b96a?q=80&w=600" alt="Calamari"></div>
       <div class="item-body"><h4>Crispy Calamari</h4><p>Flash-fried, chili lime aioli.</p>
       <div class="item-footer"><span class="price">₹420</span><button class="add-btn" onclick="addToCart('Crispy Calamari',420)">Add</button></div></div>
     </div>
@@ -125,17 +143,17 @@ footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-s
 
   <div class="menu-panel" id="mains">
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=600" alt="Pizza">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=600" alt="Pizza"></div>
       <div class="item-body"><h4>Wood-Fired Margherita</h4><p>San Marzano tomato, fior di latte, basil.</p>
       <div class="item-footer"><span class="price">₹520</span><button class="add-btn" onclick="addToCart('Wood-Fired Margherita',520)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=600" alt="Short rib">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=600" alt="Short rib"></div>
       <div class="item-body"><h4>Braised Short Rib</h4><p>12-hour braise, red wine jus, truffle mash.</p>
       <div class="item-footer"><span class="price">₹890</span><button class="add-btn" onclick="addToCart('Braised Short Rib',890)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=600" alt="Risotto">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=600" alt="Risotto"></div>
       <div class="item-body"><h4>Truffle Mushroom Risotto</h4><p>Arborio rice, wild mushrooms, parmesan.</p>
       <div class="item-footer"><span class="price">₹650</span><button class="add-btn" onclick="addToCart('Truffle Mushroom Risotto',650)">Add</button></div></div>
     </div>
@@ -143,12 +161,12 @@ footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-s
 
   <div class="menu-panel" id="desserts">
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1624353365286-3f8d62daad51?q=80&w=600" alt="Fondant">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1624353365286-3f8d62daad51?q=80&w=600" alt="Fondant"></div>
       <div class="item-body"><h4>Dark Chocolate Fondant</h4><p>Molten center, vanilla ice cream.</p>
       <div class="item-footer"><span class="price">₹320</span><button class="add-btn" onclick="addToCart('Dark Chocolate Fondant',320)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600" alt="Tiramisu">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600" alt="Tiramisu"></div>
       <div class="item-body"><h4>Classic Tiramisu</h4><p>Espresso-soaked ladyfingers, mascarpone.</p>
       <div class="item-footer"><span class="price">₹280</span><button class="add-btn" onclick="addToCart('Classic Tiramisu',280)">Add</button></div></div>
     </div>
@@ -167,36 +185,36 @@ footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-s
   </div>
   <div class="menu-panel active" id="cocktail">
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=600" alt="Negroni">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=600" alt="Negroni"></div>
       <div class="item-body"><h4>House Negroni</h4><p>Gin, campari, sweet vermouth.</p>
       <div class="item-footer"><span class="price">₹450</span><button class="add-btn" onclick="addToCart('House Negroni',450)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1621939514649-280e2ee25f60?q=80&w=600" alt="Mojito">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1621939514649-280e2ee25f60?q=80&w=600" alt="Mojito"></div>
       <div class="item-body"><h4>Smoked Mojito</h4><p>Rum, mint, lime, applewood smoke.</p>
       <div class="item-footer"><span class="price">₹480</span><button class="add-btn" onclick="addToCart('Smoked Mojito',480)">Add</button></div></div>
     </div>
   </div>
   <div class="menu-panel" id="wine">
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=600" alt="Red wine">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=600" alt="Red wine"></div>
       <div class="item-body"><h4>Reserve Red (Glass)</h4><p>Full-bodied, oak-aged reserve blend.</p>
       <div class="item-footer"><span class="price">₹600</span><button class="add-btn" onclick="addToCart('Reserve Red (Glass)',600)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1567696911980-2eed69a46042?q=80&w=600" alt="White wine">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1567696911980-2eed69a46042?q=80&w=600" alt="White wine"></div>
       <div class="item-body"><h4>Chilled Sauvignon Blanc</h4><p>Crisp, citrus-forward white.</p>
       <div class="item-footer"><span class="price">₹550</span><button class="add-btn" onclick="addToCart('Chilled Sauvignon Blanc',550)">Add</button></div></div>
     </div>
   </div>
   <div class="menu-panel" id="rooftop">
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=600" alt="Spritz">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=600" alt="Spritz"></div>
       <div class="item-body"><h4>Rooftop Spritz</h4><p>Prosecco, aperol, soda, orange.</p>
       <div class="item-footer"><span class="price">₹420</span><button class="add-btn" onclick="addToCart('Rooftop Spritz',420)">Add</button></div></div>
     </div>
     <div class="item-card">
-      <img src="https://images.unsplash.com/photo-1536935338788-846bb9981813?q=80&w=600" alt="Sunset cocktail">
+      <div class="img-frame"><img src="https://images.unsplash.com/photo-1536935338788-846bb9981813?q=80&w=600" alt="Sunset cocktail"></div>
       <div class="item-body"><h4>Sunset Fizz</h4><p>Tequila, passionfruit, lime, soda.</p>
       <div class="item-footer"><span class="price">₹460</span><button class="add-btn" onclick="addToCart('Sunset Fizz',460)">Add</button></div></div>
     </div>
@@ -298,6 +316,75 @@ footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-s
     document.getElementById('cartDrawer').classList.toggle('active', show);
     document.getElementById('overlay').classList.toggle('active', show);
   }
+
+  // Real rotating 3D object in the hero (Three.js)
+  (function(){
+    const container = document.getElementById('scene3d');
+    const w = container.clientWidth, h = container.clientHeight;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
+    camera.position.set(0,0,7);
+    const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
+    renderer.setSize(w,h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    container.appendChild(renderer.domElement);
+
+    const gold = new THREE.MeshStandardMaterial({color:0xc9a227, metalness:0.85, roughness:0.25});
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6,0.12,32,100), gold);
+    scene.add(ring);
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.1,0.06,32,100), new THREE.MeshStandardMaterial({color:0xe8c765, metalness:0.9, roughness:0.15}));
+    scene.add(ring2);
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.08,64), new THREE.MeshStandardMaterial({color:0x1c1815, metalness:0.5, roughness:0.4}));
+    scene.add(plate);
+
+    scene.add(new THREE.AmbientLight(0xffffff,0.5));
+    const p1 = new THREE.PointLight(0xe8c765, 2, 20); p1.position.set(4,3,5); scene.add(p1);
+    const p2 = new THREE.PointLight(0xa8452c, 1.5, 20); p2.position.set(-4,-2,3); scene.add(p2);
+
+    let mouseX=0, mouseY=0;
+    window.addEventListener('mousemove', e=>{
+      mouseX = (e.clientX/window.innerWidth - 0.5);
+      mouseY = (e.clientY/window.innerHeight - 0.5);
+    });
+
+    function animate(){
+      requestAnimationFrame(animate);
+      ring.rotation.x += 0.006; ring.rotation.y += 0.009;
+      ring2.rotation.x -= 0.008; ring2.rotation.y -= 0.005;
+      plate.rotation.y += 0.004;
+      camera.position.x += (mouseX*2 - camera.position.x)*0.03;
+      camera.position.y += (-mouseY*2 - camera.position.y)*0.03;
+      camera.lookAt(0,0,0);
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    window.addEventListener('resize', ()=>{
+      const w2 = container.clientWidth, h2 = container.clientHeight;
+      camera.aspect = w2/h2; camera.updateProjectionMatrix();
+      renderer.setSize(w2,h2);
+    });
+  })();
+
+  // Parallax hero background on scroll
+  window.addEventListener('scroll', ()=>{
+    const y = window.scrollY;
+    document.getElementById('heroBg').style.transform = `scale(1.15) translateY(${y*0.25}px)`;
+  });
+
+  // 3D tilt on menu/bar item cards
+  document.querySelectorAll('.item-card').forEach(card=>{
+    card.addEventListener('mousemove', e=>{
+      const r = card.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const rotX = ((y / r.height) - 0.5) * -14;
+      const rotY = ((x / r.width) - 0.5) * 14;
+      card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.03)`;
+    });
+    card.addEventListener('mouseleave', ()=>{
+      card.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+    });
+  });
 
   function checkout(){
     if(cart.length===0){ alert('Your cart is empty.'); return; }
