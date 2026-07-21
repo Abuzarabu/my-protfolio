@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ember & Oak — Premium Dining</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12100e; --bg-alt:#1c1815; --gold:#c9a227; --gold-soft:#e8c765;
+  --cream:#f3ede1; --rust:#a8452c; --line:rgba(243,237,225,0.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--cream);font-family:'Jost',sans-serif;font-weight:300;}
+h1,h2,h3,.brand{font-family:'Playfair Display',serif;}
+header{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;justify-content:space-between;align-items:center;padding:20px 5%;background:linear-gradient(to bottom,rgba(18,16,14,0.95),rgba(18,16,14,0));}
+.brand{font-size:24px;color:var(--gold-soft);letter-spacing:1px;}
+nav{display:flex;align-items:center;gap:28px;}
+nav a{color:var(--cream);text-decoration:none;font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.8;}
+nav a:hover{opacity:1;color:var(--gold-soft);}
+.cart-btn{position:relative;background:none;border:1px solid var(--gold);color:var(--gold-soft);padding:10px 18px;font-size:13px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;}
+.cart-count{position:absolute;top:-8px;right:-8px;background:var(--rust);color:#fff;font-size:11px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 20px;background:radial-gradient(circle at 30% 20%,rgba(201,162,39,0.08),transparent 40%),var(--bg);}
+.hero .eyebrow{letter-spacing:5px;text-transform:uppercase;font-size:12px;color:var(--gold);margin-bottom:16px;}
+.hero h1{font-size:clamp(42px,8vw,96px);font-style:italic;color:var(--cream);}
+.hero h1 span{color:var(--gold-soft);font-style:normal;}
+.hero p{max-width:500px;margin:20px auto 0;opacity:0.7;font-size:16px;line-height:1.7;}
+section{padding:100px 5%;}
+.section-head{text-align:center;max-width:600px;margin:0 auto 50px;}
+.section-head .tag{color:var(--gold);letter-spacing:4px;text-transform:uppercase;font-size:12px;}
+.section-head h2{font-size:clamp(30px,5vw,46px);margin-top:12px;font-weight:500;}
+.bar-tabs,.tabs{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:48px;}
+.tab-btn{background:none;border:1px solid var(--line);color:var(--cream);padding:10px 22px;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;opacity:0.7;}
+.tab-btn.active,.tab-btn:hover{opacity:1;border-color:var(--gold);color:var(--gold-soft);background:rgba(201,162,39,0.08);}
+.menu-panel{display:none;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px;max-width:1100px;margin:0 auto;}
+.menu-panel.active{display:grid;}
+.item-card{background:var(--bg-alt);border:1px solid var(--line);display:flex;flex-direction:column;}
+.item-card img{width:100%;height:180px;object-fit:cover;}
+.item-body{padding:18px;flex:1;display:flex;flex-direction:column;}
+.item-body h4{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:6px;}
+.item-body p{font-size:13px;opacity:0.65;flex:1;margin-bottom:14px;line-height:1.5;}
+.item-footer{display:flex;justify-content:space-between;align-items:center;}
+.item-footer .price{color:var(--gold-soft);font-family:'Playfair Display',serif;font-size:19px;}
+.add-btn{background:var(--gold);color:var(--bg);border:none;padding:8px 16px;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.add-btn:hover{background:var(--gold-soft);}
+.contact-wrap{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;border-top:1px solid var(--line);padding-top:50px;}
+.contact-wrap h3{color:var(--gold-soft);margin-bottom:16px;}
+.contact-wrap p{opacity:0.75;line-height:2;font-size:15px;}
+.contact-wrap a{color:var(--cream);border-bottom:1px solid var(--gold);text-decoration:none;}
+footer{text-align:center;padding:36px 5%;border-top:1px solid var(--line);font-size:13px;opacity:0.5;}
+
+/* CART DRAWER */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:299;display:none;}
+.overlay.active{display:block;}
+.cart-drawer{position:fixed;top:0;right:-420px;width:400px;max-width:90vw;height:100%;background:var(--bg-alt);z-index:300;transition:right 0.35s ease;display:flex;flex-direction:column;border-left:1px solid var(--line);}
+.cart-drawer.active{right:0;}
+.cart-header{display:flex;justify-content:space-between;align-items:center;padding:24px;border-bottom:1px solid var(--line);}
+.cart-header h3{color:var(--gold-soft);}
+.close-cart{background:none;border:none;color:var(--cream);font-size:22px;cursor:pointer;}
+.cart-items{flex:1;overflow-y:auto;padding:16px 24px;}
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px dashed var(--line);}
+.cart-item .ci-name{font-size:14px;}
+.cart-item .ci-qty{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.cart-item .ci-qty button{background:none;border:1px solid var(--line);color:var(--cream);width:24px;height:24px;cursor:pointer;}
+.cart-item .ci-price{color:var(--gold-soft);font-family:'Playfair Display',serif;}
+.cart-empty{opacity:0.5;text-align:center;padding:40px 0;font-size:14px;}
+.cart-footer{padding:24px;border-top:1px solid var(--line);}
+.cart-total{display:flex;justify-content:space-between;font-size:18px;margin-bottom:18px;font-family:'Playfair Display',serif;color:var(--gold-soft);}
+.pay-options{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.pay-options label{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:12px 14px;cursor:pointer;font-size:14px;}
+.pay-options label:has(input:checked){border-color:var(--gold);color:var(--gold-soft);}
+.checkout-btn{width:100%;background:var(--gold);color:var(--bg);border:none;padding:14px;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;}
+.checkout-btn:hover{background:var(--gold-soft);}
+.checkout-note{font-size:11px;opacity:0.5;margin-top:10px;text-align:center;line-height:1.5;}
+@media(max-width:700px){.contact-wrap{grid-template-columns:1fr;}nav a{display:none;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Ember &amp; Oak</div>
+  <nav>
+    <a href="#menu">Menu</a>
+    <a href="#bars">Bars</a>
+    <a href="#contact">Contact</a>
+    <button class="cart-btn" onclick="toggleCart(true)">Cart <span class="cart-count" id="cartCount">0</span></button>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Fine Dining &amp; Craft Bars</div>
+  <h1>Ember <span>&amp;</span> Oak</h1>
+  <p>Wood-fired plates, three curated bars, and a menu built for lingering evenings.</p>
+</section>
+
+<section id="menu">
+  <div class="section-head">
+    <div class="tag">Full Menu</div>
+    <h2>Order what moves you</h2>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="starters">Starters</button>
+    <button class="tab-btn" data-tab="mains">Mains</button>
+    <button class="tab-btn" data-tab="desserts">Desserts</button>
+  </div>
+
+  <div class="menu-panel active" id="starters">
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1541529086526-db283c563270?q=80&w=600" alt="Burrata">
+      <div class="item-body"><h4>Burrata &amp; Charred Fig</h4><p>Creamy burrata, roasted figs, basil oil.</p>
+      <div class="item-footer"><span class="price">₹380</span><button class="add-btn" onclick="addToCart('Burrata & Charred Fig',380)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1476124369491-e7addf5db371?q=80&w=600" alt="Soup">
+      <div class="item-body"><h4>Smoked Tomato Soup</h4><p>Smoked tomatoes, cream swirl, garlic bread.</p>
+      <div class="item-footer"><span class="price">₹250</span><button class="add-btn" onclick="addToCart('Smoked Tomato Soup',250)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1541014741259-de529411b96a?q=80&w=600" alt="Calamari">
+      <div class="item-body"><h4>Crispy Calamari</h4><p>Flash-fried, chili lime aioli.</p>
+      <div class="item-footer"><span class="price">₹420</span><button class="add-btn" onclick="addToCart('Crispy Calamari',420)">Add</button></div></div>
+    </div>
+  </div>
+
+  <div class="menu-panel" id="mains">
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=600" alt="Pizza">
+      <div class="item-body"><h4>Wood-Fired Margherita</h4><p>San Marzano tomato, fior di latte, basil.</p>
+      <div class="item-footer"><span class="price">₹520</span><button class="add-btn" onclick="addToCart('Wood-Fired Margherita',520)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=600" alt="Short rib">
+      <div class="item-body"><h4>Braised Short Rib</h4><p>12-hour braise, red wine jus, truffle mash.</p>
+      <div class="item-footer"><span class="price">₹890</span><button class="add-btn" onclick="addToCart('Braised Short Rib',890)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=600" alt="Risotto">
+      <div class="item-body"><h4>Truffle Mushroom Risotto</h4><p>Arborio rice, wild mushrooms, parmesan.</p>
+      <div class="item-footer"><span class="price">₹650</span><button class="add-btn" onclick="addToCart('Truffle Mushroom Risotto',650)">Add</button></div></div>
+    </div>
+  </div>
+
+  <div class="menu-panel" id="desserts">
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1624353365286-3f8d62daad51?q=80&w=600" alt="Fondant">
+      <div class="item-body"><h4>Dark Chocolate Fondant</h4><p>Molten center, vanilla ice cream.</p>
+      <div class="item-footer"><span class="price">₹320</span><button class="add-btn" onclick="addToCart('Dark Chocolate Fondant',320)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=600" alt="Tiramisu">
+      <div class="item-body"><h4>Classic Tiramisu</h4><p>Espresso-soaked ladyfingers, mascarpone.</p>
+      <div class="item-footer"><span class="price">₹280</span><button class="add-btn" onclick="addToCart('Classic Tiramisu',280)">Add</button></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="bars">
+  <div class="section-head">
+    <div class="tag">Our Bars</div>
+    <h2>Three bars, one house</h2>
+  </div>
+  <div class="bar-tabs">
+    <button class="tab-btn active" data-tab="cocktail">Cocktail Bar</button>
+    <button class="tab-btn" data-tab="wine">Wine Bar</button>
+    <button class="tab-btn" data-tab="rooftop">Rooftop Bar</button>
+  </div>
+  <div class="menu-panel active" id="cocktail">
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=600" alt="Negroni">
+      <div class="item-body"><h4>House Negroni</h4><p>Gin, campari, sweet vermouth.</p>
+      <div class="item-footer"><span class="price">₹450</span><button class="add-btn" onclick="addToCart('House Negroni',450)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1621939514649-280e2ee25f60?q=80&w=600" alt="Mojito">
+      <div class="item-body"><h4>Smoked Mojito</h4><p>Rum, mint, lime, applewood smoke.</p>
+      <div class="item-footer"><span class="price">₹480</span><button class="add-btn" onclick="addToCart('Smoked Mojito',480)">Add</button></div></div>
+    </div>
+  </div>
+  <div class="menu-panel" id="wine">
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=600" alt="Red wine">
+      <div class="item-body"><h4>Reserve Red (Glass)</h4><p>Full-bodied, oak-aged reserve blend.</p>
+      <div class="item-footer"><span class="price">₹600</span><button class="add-btn" onclick="addToCart('Reserve Red (Glass)',600)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1567696911980-2eed69a46042?q=80&w=600" alt="White wine">
+      <div class="item-body"><h4>Chilled Sauvignon Blanc</h4><p>Crisp, citrus-forward white.</p>
+      <div class="item-footer"><span class="price">₹550</span><button class="add-btn" onclick="addToCart('Chilled Sauvignon Blanc',550)">Add</button></div></div>
+    </div>
+  </div>
+  <div class="menu-panel" id="rooftop">
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=600" alt="Spritz">
+      <div class="item-body"><h4>Rooftop Spritz</h4><p>Prosecco, aperol, soda, orange.</p>
+      <div class="item-footer"><span class="price">₹420</span><button class="add-btn" onclick="addToCart('Rooftop Spritz',420)">Add</button></div></div>
+    </div>
+    <div class="item-card">
+      <img src="https://images.unsplash.com/photo-1536935338788-846bb9981813?q=80&w=600" alt="Sunset cocktail">
+      <div class="item-body"><h4>Sunset Fizz</h4><p>Tequila, passionfruit, lime, soda.</p>
+      <div class="item-footer"><span class="price">₹460</span><button class="add-btn" onclick="addToCart('Sunset Fizz',460)">Add</button></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="section-head"><div class="tag">Visit Us</div><h2>Reserve a table</h2></div>
+  <div class="contact-wrap">
+    <div><h3>Ember &amp; Oak</h3>
+      <p>14 Lakeview Road, Banjara Hills<br>Hyderabad, Telangana 500034<br><br>
+      Email: <a href="mailto:hello@emberoak.com">hello@emberoak.com</a><br>
+      Phone: <a href="tel:+914012345678">+91 40 1234 5678</a></p>
+    </div>
+    <div><h3>Hours</h3>
+      <p>Mon – Thu: 5 PM – 11 PM<br>Fri – Sat: 1 PM – 12 AM<br>Sunday: 1 PM – 10 PM</p>
+    </div>
+  </div>
+</section>
+
+<footer>&copy; 2026 Ember &amp; Oak. All rights reserved.</footer>
+
+<div class="overlay" id="overlay" onclick="toggleCart(false)"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-header"><h3>Your Order</h3><button class="close-cart" onclick="toggleCart(false)">&times;</button></div>
+  <div class="cart-items" id="cartItems"><div class="cart-empty">Your cart is empty</div></div>
+  <div class="cart-footer">
+    <div class="cart-total"><span>Total</span><span id="cartTotal">₹0</span></div>
+    <div class="pay-options">
+      <label><input type="radio" name="pay" value="paytm" checked> Paytm</label>
+      <label><input type="radio" name="pay" value="card"> Credit / Debit Card</label>
+      <label><input type="radio" name="pay" value="cod"> Cash on Delivery</label>
+    </div>
+    <button class="checkout-btn" onclick="checkout()">Place Order</button>
+    <div class="checkout-note">Demo checkout — no real payment is processed. Connect a payment gateway backend before taking live orders.</div>
+  </div>
+</div>
+
+<script>
+  // Tabs (works independently per group since panels have unique IDs)
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const group = btn.closest('div').querySelectorAll('.tab-btn');
+      group.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById(btn.dataset.tab);
+      panel.parentElement.querySelectorAll(':scope > .menu-panel').forEach(p=>p.classList.remove('active'));
+      panel.classList.add('active');
+    });
+  });
+
+  let cart = [];
+
+  function addToCart(name, price){
+    const existing = cart.find(i=>i.name===name);
+    if(existing){ existing.qty++; } else { cart.push({name,price,qty:1}); }
+    renderCart();
+    toggleCart(true);
+  }
+
+  function changeQty(name, delta){
+    const item = cart.find(i=>i.name===name);
+    if(!item) return;
+    item.qty += delta;
+    if(item.qty<=0) cart = cart.filter(i=>i.name!==name);
+    renderCart();
+  }
+
+  function renderCart(){
+    const container = document.getElementById('cartItems');
+    const countEl = document.getElementById('cartCount');
+    const totalEl = document.getElementById('cartTotal');
+    const totalQty = cart.reduce((s,i)=>s+i.qty,0);
+    countEl.textContent = totalQty;
+    if(cart.length===0){
+      container.innerHTML = '<div class="cart-empty">Your cart is empty</div>';
+      totalEl.textContent = '₹0';
+      return;
+    }
+    let total = 0;
+    container.innerHTML = cart.map(i=>{
+      total += i.price*i.qty;
+      return `<div class="cart-item">
+        <div>
+          <div class="ci-name">${i.name}</div>
+          <div class="ci-qty">
+            <button onclick="changeQty('${i.name}',-1)">-</button>
+            <span>${i.qty}</span>
+            <button onclick="changeQty('${i.name}',1)">+</button>
+          </div>
+        </div>
+        <div class="ci-price">₹${i.price*i.qty}</div>
+      </div>`;
+    }).join('');
+    totalEl.textContent = '₹'+total;
+  }
+
+  function toggleCart(show){
+    document.getElementById('cartDrawer').classList.toggle('active', show);
+    document.getElementById('overlay').classList.toggle('active', show);
+  }
+
+  function checkout(){
+    if(cart.length===0){ alert('Your cart is empty.'); return; }
+    const method = document.querySelector('input[name="pay"]:checked').value;
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    alert('Demo order placed!\\nPayment method: '+method+'\\nTotal: ₹'+total+'\\n\\nThis is a frontend demo — no real payment was charged.');
+    cart = [];
+    renderCart();
+    toggleCart(false);
+  }
+</script>
+
+</body>
+</html>
